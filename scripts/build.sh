@@ -55,12 +55,17 @@ if [[ ${OXID_VERSION} =~ ^5\.([0-9]+).* ]]; then
     git clone https://github.com/OXID-eSales/flow_theme.git flow --branch b-1.0
     cp -R flow/out/flow ../../out/
 
+    rm -rf ${MODULE_TARGET_DIR}
+    ln -s ${MODULE_DIR} ${MODULE_TARGET_DIR}
+    composer install -d ${MODULE_TARGET_DIR} --ignore-platform-reqs
+
     DB_SCHEMA_FILE=${SHOP_WEB_DIR}/setup/sql/database_schema.sql
     DB_DEMO_DATA_FILE=${SHOP_WEB_DIR}/setup/sql/demodata.sql
     TEST_CONFIG_DIR=${SHOP_WEB_DIR}
 else
     mkdir -p ${SHOP_DIR}
-    composer create-project -n --no-progress --working-dir=${SHOP_DIR} oxid-esales/oxideshop-project ${SHOP_DIR} ${OXID_VERSION}
+    composer create-project -n --no-install --no-progress --working-dir=${SHOP_DIR} oxid-esales/oxideshop-project ${SHOP_DIR} ${OXID_VERSION}
+    composer require bestit/amazonpay4oxid:3.5.0 -d ${SHOP_DIR}
     cp ${SHOP_WEB_DIR}/config.inc.php.dist ${SHOP_WEB_DIR}/config.inc.php
 
     sed -i 's|<dbHost>|'${DB_HOST}'|; s|<dbName>|oxidehop_ce|; s|<dbUser>|'${DB_USER}'|; s|<dbPwd>|'${DB_PASS}'|; s|<sShopURL>|https://localhost:'${HTTPS_PORT}/'|; s|<sSSLShopURL>|https://localhost:'${HTTPS_PORT}/'|; s|<sShopDir>|'${SHOP_WEB_DIR}'|; s|<sCompileDir>|'${SHOP_WEB_DIR}'/tmp|; s|$this->iDebug = 0|$this->iDebug = 0|' ${SHOP_WEB_DIR}/config.inc.php
@@ -89,9 +94,6 @@ cat <<EOF > ${VENDOR_DIR}/vendormetadata.php
 <?php
 \$sVendorMetadataVersion = '1.0';
 EOF
-rm -rf ${MODULE_TARGET_DIR}
-ln -s ${MODULE_DIR} ${MODULE_TARGET_DIR}
-composer install -d ${MODULE_TARGET_DIR} --ignore-platform-reqs
 
 if [[ -f ${SHOP_DIR}/vendor/bin/oe-console ]]; then
     ${SHOP_DIR}/vendor/bin/oe-console oe:module:install-configuration ${MODULE_TARGET_DIR}
